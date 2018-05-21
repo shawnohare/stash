@@ -1,0 +1,86 @@
+#!/usr/bin/env sh
+
+set -e
+
+# Link source dir $1 to target $2.  Paths must be absolute.
+link() {
+
+  if [ -z "$1" ] || [ -z "$2" ]; then
+    printf "Error: Source or target not specified."
+    exit 1
+  fi
+
+  src_dir="$1"
+  tar_dir="$2"
+
+  [ "${verbose}" ] && printf "Stashing: ${src_dir} -> ${tar_dir}\n"
+
+  cd "${src_dir}"
+
+  # Hard copy the dir tree to the target.
+  find . -type d | while read -r path; do
+    [ "${delete}" ] || mkdir -p "${tar_dir}/${path}"
+  done
+
+  # Symlink files to the target.
+  find . -type f | while read -r path; do
+    # Ignore the initial ./ appearing in the results of find output.
+    # path="${path:2}"  # bash only
+    path="${path#??}"  # POSIX
+    src="${src_dir}/${path}"
+    tar="${tar_dir}/${path}"
+
+    # If there's no file and we're in link mode, link. Otherwise unlink.
+    # Check if the file or link exist to avoid unresolved links too.
+    if [ ! "${delete}" ] && [ ! -L "${tar}" ] && [ ! -f "${tar}" ]; then
+      [ "${verbose}" ] &&  printf "Linking: ${path}\n"
+      ln -s "${src}" "${tar}"
+    elif [ "${delete}" ] && [ -L "${tar}" ]; then
+      [ "${verbose}" ] && printf "Unlinking: ${path}\n"
+      rm "${tar}"
+    fi
+
+  done
+}
+
+main() {
+  target=".."
+
+  while getopts "hvdt:" opt; do
+    case "${opt}" in
+      h)
+        man stash
+        exit
+        ;;
+      v)
+        verbose=1
+        shift
+        ;;
+      d)
+        delete=1
+        shift
+        ;;
+      t)
+        target="${OPTARG}"
+        shift 2
+        ;;
+      \?)
+        printf "Invalid option: -${OPTARG}" >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  # Check if target is relative relative path (remove shortest prefix /)
+  if [ "${target#/}" = "${target}" ]; then
+    target="$(pwd)/${target}"
+  fi
+
+  for dir in "$@"; do
+    [ "${dir#/}" = "${dir}" ] && dir="$(pwd)/${dir}"
+    link "${dir}" "${target}"
+  done
+}
+
+
+main "$@"
