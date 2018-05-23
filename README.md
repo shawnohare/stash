@@ -1,6 +1,6 @@
 # Stash 
 
-A simplified version of the symlink farm manager 
+A simplified version of the package symlink manager 
 [GNU stow](https://www.gnu.org/software/stow/) written in POSIX shell script.
 `stash` is feature minimal since its intended use case is symlinking user
 configuration files stored in a version controlled repository. To this end,
@@ -13,41 +13,37 @@ TODO
 
 # Installation
 
+## Local
+
+Ensure that that `${XDG_DATA_HOME}/../bin` (defaults to
+`${XDG_BIN_HOME:-~/.local/bin}`) is an element of `$PATH` then navigate to the
+project root and issue:
+
+```bash
+make 
+```
+
+The man page is installed to `${XDG_DATA_HOME}/man/man1`, which `man` will
+search provided that `${XDG_DATA_HOME}/../bin` is an element of `$PATH`.
+
 ## Global(superuser access)
 
 Since `stash` is just a simple executable shell script, it can be installed
 globally via
 
 ```bash
-sudo cp "bin/stash" /usr/local/bin/stash
-sudo cp "man/stash.1" "/usr/local/man/man1/stash.1"
+sudo cp "bin/stash" "/usr/local/bin/"
+gzip --keep "man/stash.1"
+sudo cp "man/stash.1.gz" "/usr/local/man/man1/"
 ```
 
-## Local
-
-Ensure that `$XDG_BIN_HOME` (defaults to `~/.local/bin`) is in your `PATH`,
-then navigate to the project root and issue:
-
-```bash
-make install
-```
-
-This exploits the fact that `man` searches `$path/share/man` for any
-`$path` appearing in `PATH`.
-
-## Git submodule
-
-As the project originally grew out of a homegrown attempt to remove `stow`
-as a dependency from user configuration logic, a natural use case is to 
-make `stash` a submodue of a configuration repo and then call it as needed.
-
-# Running tests
+# Tests 
 
 Install the shell scripting testing framework
 [bats](https://github.com/bats-core/bats-core) and then from the project root: 
 
 ```bash
-$ bats tests/*
+$ make test
 ```
 
 # Similar Projects

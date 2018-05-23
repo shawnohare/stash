@@ -1,0 +1,102 @@
+.TH stash 1 "20 May 2018" "Version 0.1.0"
+
+.SH NAME
+
+stash - simple symlink manager.
+
+.SH SYNOPSIS
+
+.B stash 
+.R [-\fBh\fR] [-\fBdfv\fR] [-\fBt \fItarget\fR]
+.I dir \fR...
+
+.SH DESCRIPTION 
+
+.B stash
+symlinks the entire contents of a 
+.I source
+directory to some
+.I target
+directory.
+
+In this regard, can be considered a feature minimal version of GNU
+.B stow\fR. 
+
+
+The subdirectory structure of the source is copied to the target.
+This makes 
+.B stash
+suited to linking user configuration files stored in version controlled
+repositoriers to directories that might also be populated by application data.
+
+.SH OPTIONS
+
+.TP 
+.B -h
+Display this man page, if available.
+
+.TP 
+.B -v
+Verbose mode. Prints which package files are linked or removed.
+
+.TP 
+.B -f
+Force the removal of target files before linking.
+
+.TP 
+.B -d
+Delete target links rather than create them. When
+.B -f
+is set, remove target files (even non-links).
+
+.TP 
+.B -t \fItarget
+Specify a target directory into which source files will be linked. 
+Defaults to the parent of the current directory.
+
+
+.SH EXAMPLES
+
+.HP
+.B stash \fIpkg 
+
+Link the files in the 
+.I pkg
+dir to the parent of the current directory.
+
+.HP
+.B stash -f -t \fI~ ~/dotfiles ~/private_dotfiles
+
+Link the public / private user configuration files stored in the
+.I ~/dotfiles
+and 
+.I ~/private_dotfiles
+repositories into the user's
+.I $HOME
+dir. 
+An existing
+.B ~/.bashrc
+will be replaced with a link to
+.B ~/dotfiles/.bashrc
+provided the latter file exists.
+Since the 
+.B -f
+flag is set, a stack priority is used. That is, the files in
+.I ~/private_dotfiles
+have priority over those in
+.I ~/dotfiles\fR.
+
+.SH SEE ALSO
+
+.TP 
+.B stow
+A more feature rich symlink manager written in perl
+(https://www.gnu.org/software/stow/).
+
+.TP 
+.B stowsh 
+A bash port of 
+.B stow
+that seeks more feature parity than
+.B stash
+(https://github.com/williamsmj/stowsh).

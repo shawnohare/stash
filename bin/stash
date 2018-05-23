@@ -2,85 +2,70 @@
 
 set -e
 
-# Link source dir $1 to target $2.  Paths must be absolute.
-link() {
 
-  if [ -z "$1" ] || [ -z "$2" ]; then
-    printf "Error: Source or target not specified."
-    exit 1
+# Process args and options.
+while getopts "Dfhrvt:" opt; do
+  case "${opt}" in
+    D)
+      del=1
+      cmd="stash"
+      shift
+      ;;
+    f)
+      force=1
+      shift
+      ;;
+    h)
+      man stash || printf "Usage: stash [-Dfv] [-h] [-t target] dir ...\n"
+      exit
+      ;;
+    v)
+      verbose=1
+      shift
+      ;;
+    t)
+      target="${OPTARG}"
+      shift 2
+      ;;
+    \?)
+      printf "Invalid option: -${OPTARG}" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# Default target dir to parent directory.
+target="${target:-$(dirname $(pwd))}"
+cmd="${cmd:-stash}"
+
+# Check if target is relative relative path (remove shortest prefix /)
+if [ "${target#/}" = "${target}" ]; then
+  target="$(pwd)/${target}"
+fi
+
+for dir in "$@"; do
+  [ "${dir#/}" = "${dir}" ] && dir="$(pwd)/${dir}"
+
+  cd "${dir}"
+
+  # Copy source directory structure to target, if necessary.
+  if [ ! "${del}" ]; then
+    find * -type d | while read -r dir; do mkdir -p "${target}/${dir}"; done
   fi
 
-  src_dir="$1"
-  tar_dir="$2"
+  # (un)stash each source file. 
+  find * -type f | while read -r path; do
 
-  [ "${verbose}" ] && printf "Stashing: ${src_dir} -> ${tar_dir}\n"
+    src="${dir}/${path}"
+    tar="${target}/${path}"
 
-  cd "${src_dir}"
-
-  # Hard copy the dir tree to the target.
-  find . -type d | while read -r path; do
-    [ "${delete}" ] || mkdir -p "${tar_dir}/${path}"
-  done
-
-  # Symlink files to the target.
-  find . -type f | while read -r path; do
-    # Ignore the initial ./ appearing in the results of find output.
-    # path="${path:2}"  # bash only
-    path="${path#??}"  # POSIX
-    src="${src_dir}/${path}"
-    tar="${tar_dir}/${path}"
-
-    # If there's no file and we're in link mode, link. Otherwise unlink.
-    # Check if the file or link exist to avoid unresolved links too.
-    if [ ! "${delete}" ] && [ ! -L "${tar}" ] && [ ! -f "${tar}" ]; then
-      [ "${verbose}" ] &&  printf "Linking: ${path}\n"
-      ln -s "${src}" "${tar}"
-    elif [ "${delete}" ] && [ -L "${tar}" ]; then
-      [ "${verbose}" ] && printf "Unlinking: ${path}\n"
-      rm "${tar}"
+    # (un)stash files in the source dir. When force is set, act. Otherwise:
+    # - Only stash when the target file (or link) does not exist. 
+    # - Only delete links. 
+    if [ "${force}" ] || ([ "${del}" ] && [ -L "${tar}" ]) || [ ! -f "${tar}" ]; then
+      [ "${verbose}" ] &&  printf "${del}${src} -> ${tar}\n"
+      ([ "${del}" ] && rm -f "${tar}") || ln -s -f "${src}" "${tar}"
     fi
 
   done
-}
-
-main() {
-  target=".."
-
-  while getopts "hvdt:" opt; do
-    case "${opt}" in
-      h)
-        man stash
-        exit
-        ;;
-      v)
-        verbose=1
-        shift
-        ;;
-      d)
-        delete=1
-        shift
-        ;;
-      t)
-        target="${OPTARG}"
-        shift 2
-        ;;
-      \?)
-        printf "Invalid option: -${OPTARG}" >&2
-        exit 1
-        ;;
-    esac
-  done
-
-  # Check if target is relative relative path (remove shortest prefix /)
-  if [ "${target#/}" = "${target}" ]; then
-    target="$(pwd)/${target}"
-  fi
-
-  for dir in "$@"; do
-    [ "${dir#/}" = "${dir}" ] && dir="$(pwd)/${dir}"
-    link "${dir}" "${target}"
-  done
-}
-
-
-main "$@"
+done
