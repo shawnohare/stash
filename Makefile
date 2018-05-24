@@ -1,3 +1,4 @@
+root:= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 XDG_BIN_HOME ?= ${HOME}/.local/bin
 XDG_DATA_HOME ?= ${HOME}/.local/share
 
@@ -5,22 +6,18 @@ XDG_DATA_HOME ?= ${HOME}/.local/share
 
 all: install
 
-
-man/stash.1.gz:
-	gzip --keep man/stash.1
-
-docs: man/stash.1.gz
-
 test:
 	rm -rf tmp
 	bats tests/*
 	rm -rf tmp
 
+docs: 
+	mkdir -p "${XDG_DATA_HOME}/man/man1"
+	cp $(root)man/stash.1 "${XDG_DATA_HOME}/man/man1/"
+
 install: docs
-	cp bin/stash "${XDG_BIN_HOME}"
-	cp man/stash.1.gz "${XDG_DATA_HOME}/man/man1/"
+	cp $(root)bin/stash "${XDG_BIN_HOME}"
 
 uninstall:
 	rm -f "${XDG_BIN_HOME}/stash"
-	rm -f "${XDG_DATA_HOME}/man/man1/stash.1.gz"
-	
+	rm -f "${XDG_DATA_HOME}/man/man1/stash.1"
