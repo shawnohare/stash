@@ -3,69 +3,107 @@
 set -e
 
 
-# Process args and options.
-while getopts "Dfhrvt:" opt; do
-  case "${opt}" in
-    D)
-      del=1
-      cmd="stash"
-      shift
-      ;;
-    f)
-      force=1
-      shift
-      ;;
-    h)
-      man stash || printf "Usage: stash [-Dfv] [-h] [-t target] dir ...\n"
-      exit
-      ;;
-    v)
-      verbose=1
-      shift
-      ;;
-    t)
-      target="${OPTARG}"
-      shift 2
-      ;;
-    \?)
-      printf "Invalid option: -${OPTARG}" >&2
-      exit 1
-      ;;
-  esac
-done
+usage() {
+  cat << EOF
+Usage: stash [-Dfv] [-h] [-t target] dir ...
 
-# Default target dir to parent directory.
-target="${target:-$(dirname $(pwd))}"
-cmd="${cmd:-stash}"
+OPTIONS:
+  -t target  
+        Specify target directory to link into. Defaults to $STASH_TARGET or parent.
+  -f    Force the creation or removal of links from source to target.
+  -D    Delete target links. If -f is set, also remove target files.
+  -v    Verbose messages. Silent by default.
+  -h    Display the man page or this usage message.
+EOF
+}
 
-# Check if target is relative relative path (remove shortest prefix /)
-if [ "${target#/}" = "${target}" ]; then
-  target="$(pwd)/${target}"
-fi
 
-for dir in "$@"; do
-  [ "${dir#/}" = "${dir}" ] && dir="$(pwd)/${dir}"
+# Link a src dir $1 to target $2
+stash() {
+  cd "$1"
 
-  cd "${dir}"
+  # Copy source directory structure to target.
+  find * -type d | while read -r dir; do mkdir -p "$2/${dir}"; done
 
-  # Copy source directory structure to target, if necessary.
-  if [ ! "${del}" ]; then
-    find * -type d | while read -r dir; do mkdir -p "${target}/${dir}"; done
-  fi
-
-  # (un)stash each source file. 
+  # link each source file to the target dir
+  # We could find against full path but then we have to remove the prefix.
   find * -type f | while read -r path; do
 
-    src="${dir}/${path}"
-    tar="${target}/${path}"
+    src="$1/${path}"
+    tar="$2/${path}"
 
-    # (un)stash files in the source dir. When force is set, act. Otherwise:
     # - Only stash when the target file (or link) does not exist. 
-    # - Only delete links. 
-    if [ "${force}" ] || ([ "${del}" ] && [ -L "${tar}" ]) || [ ! -f "${tar}" ]; then
-      [ "${verbose}" ] &&  printf "${del}${src} -> ${tar}\n"
-      ([ "${del}" ] && rm -f "${tar}") || ln -s -f "${src}" "${tar}"
+    if [ "${FORCE}" ] || [ ! -f "${tar}" ]; then
+      [ "${verbose}" ] &&  printf "stash: ${src} -> ${tar}\n"
+      ln -f -s "${src}" "${tar}"
     fi
-
   done
-done
+}
+
+# unlink a src dir $1 to target $2
+unstash() {
+  cd "$1"
+
+  # (un)stash each source file. 
+  # We could find against full path but then we have to remove the prefix.
+  find * -type f | while read -r path; do
+    # src="$1/${path}"
+    tar="$2/${path}"
+
+    if [ "${FORCE}" ] || [ -L "${tar}" ]; then
+      [ "${verbose}" ] &&  printf "unstash: ${tar}\n"
+      rm -f "${tar}"
+    fi
+  done
+
+  # Remove empty dirs in the source.
+  find * -type d | while read -r dir; do rmdir "$2/${dir}" &> /dev/null; done
+}
+
+
+main() {
+  while getopts "Dfhvt:" opt; do
+    case "${opt}" in
+      D)
+        cmd="unstash"
+        shift
+        ;;
+      f)
+        FORCE=1
+        shift
+        ;;
+      h)
+        man stash || usage 
+        exit
+        ;;
+      v)
+        verbose=1
+        shift
+        ;;
+      t)
+        target="${OPTARG}"
+        shift 2
+        ;;
+      \?)
+        usage
+        exit 1
+        ;;
+    esac
+  done
+
+  cmd="${cmd:-stash}"
+  target="${target:-${STASH_TARGET:-$(dirname $(pwd))}}"
+
+  # Check if target is relative relative path (remove shortest prefix /)
+  if [ "${target#/}" = "${target}" ]; then
+    target="$(pwd)/${target}"
+  fi
+
+  for dir in "$@"; do
+    [ "${dir#/}" = "${dir}" ] && dir="$(pwd)/${dir}"
+    ${cmd} "${dir}" "${target}"
+  done
+
+}
+
+main "$@"

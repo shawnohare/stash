@@ -20,8 +20,9 @@ setup() {
 }
 
 teardown() {
+  # rm -rf tmp
   cd tmp
-  rm -rf ignore remove config1 config2 bin
+  rm -rf ignore remove config1 config2 bin/bin1
   cd ..
 }
 
@@ -80,17 +81,29 @@ teardown() {
 @test "unstash: ensure all package links are removed." {
   bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
   bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
   [ ! -e "tmp/bin/bin1" ]
   [ ! -e "tmp/config1" ]
   [ ! -L "tmp/ignore" ]
   [ ! -e "tmp/remove" ]
+  [ ! -d "tmp/bin" ]
+}
+
+@test "unstash: non-empty dirs shouldn't be removed." {
+  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
+  touch tmp/bin/anchor
+  bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
+  [ ! -e "tmp/bin/bin1" ]
+  [ ! -e "tmp/config1" ]
+  [ ! -L "tmp/ignore" ]
+  [ ! -e "tmp/remove" ]
+  [ -d "tmp/bin" ]
+  rm tmp/bin/anchor
 }
 
 @test "unstash: multiple sources." {
   bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1" "$(pwd)/tmp/stash/pkg1"
   bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1" "$(pwd)/tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
+  [ ! -d "tmp/bin" ]
   [ ! -e "tmp/bin/bin1" ]
   [ ! -e "tmp/config1" ]
   [ ! -e "tmp/config2" ]
@@ -98,24 +111,23 @@ teardown() {
   [ ! -e "tmp/remove" ]
 }
 
-
 @test "unstash: idempotence." {
   bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
   bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
   bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
   [ ! -e "tmp/bin/bin1" ]
   [ ! -e "tmp/config1" ]
   [ ! -L "tmp/ignore" ]
   [ ! -e "tmp/remove" ]
+  [ ! -d "tmp/bin" ]
 }
 
 @test "unstash: force." {
   bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
   bin/stash -v -D -f -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
   [ ! -e "tmp/bin/bin1" ]
   [ ! -e "tmp/config1" ]
   [ ! -e "tmp/ignore" ]
   [ ! -e "tmp/remove" ]
+  [ ! -d "tmp/bin" ]
 }
