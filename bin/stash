@@ -13,6 +13,7 @@ OPTIONS:
   -f    Force the creation or removal of links from source to target.
   -D    Delete target links. If -f is set, also remove target files.
   -v    Verbose messages. Silent by default.
+  -V    Print version number.
   -h    Display the man page or this usage message.
 EOF
 }
@@ -62,7 +63,7 @@ unstash() {
 
 
 main() {
-  while getopts "Dfhvt:" opt; do
+  while getopts "DfhvVt:" opt; do
     case "${opt}" in
       D)
         cmd="unstash"
@@ -79,6 +80,10 @@ main() {
       v)
         verbose=1
         shift
+        ;;
+      V)
+        printf "stash version 1.0.1\n"
+        exit
         ;;
       t)
         target="${OPTARG}"

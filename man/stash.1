@@ -6,53 +6,57 @@ stash - simple symlink manager.
 
 .SH SYNOPSIS
 
-.B stash 
+.B stash
 .R [-\fBh\fR] [-\fBDfv\fR] [-\fBt \fItarget\fR]
 .I dir \fR...
 
-.SH DESCRIPTION 
+.SH DESCRIPTION
 
 .B stash
-symlinks the entire contents of a 
+symlinks the entire contents of a
 .I source
 directory to some
 .I target
 directory.
 
-The subdirectory structure of the 
+The subdirectory structure of the
 .I source
-is copied to the 
+is copied to the
 .I target
 directory.
-This makes 
+This makes
 .B stash
 suited to linking user configuration files stored in version controlled
 repositories to directories that might also be populated by application data.
 
 .SH OPTIONS
 
-.TP 
+.TP
 .B -h
 Display this man page, if available. Otherise print a usage message.
 
-.TP 
+.TP
 .B -v
 Verbose mode. Prints which package files are linked or removed.
 
-.TP 
+.TP
+.B -V
+Print version.
+
+.TP
 .B -f
 Force the removal of target files before linking.
 
-.TP 
+.TP
 .B -D
 Delete target links rather than create them. When
 .B -f
 is set, remove target files (even non-links). Subdirs in the target are
 removed only if they are empty.
 
-.TP 
+.TP
 .B -t \fItarget
-Specify a target directory into which source files will be linked. 
+Specify a target directory into which source files will be linked.
 Defaults to
 .B $STASH_TARGET
 if this is set else the parent of the current directory.
@@ -60,7 +64,7 @@ if this is set else the parent of the current directory.
 .SH ENVIRONMENT
 
 .TP
-.B STASH_TARGET 
+.B STASH_TARGET
 Default
 .I target
 when none is passed via the
@@ -71,9 +75,9 @@ current directory.
 .SH EXAMPLES
 
 .HP
-.B stash \fIpkg 
+.B stash \fIpkg
 
-Link the files in the 
+Link the files in the
 .I pkg
 dir to the parent of the current directory.
 
@@ -82,17 +86,17 @@ dir to the parent of the current directory.
 
 Link the public / private user configuration files stored in the
 .I ~/dotfiles
-and 
+and
 .I ~/private_dotfiles
 repositories into the user's
 .I $HOME
-dir. 
+dir.
 An existing
 .B ~/.bashrc
 will be replaced with a link to
 .B ~/dotfiles/.bashrc
 provided the latter file exists.
-Since the 
+Since the
 .B -f
 flag is set, a stack priority is used. That is, the files in
 .I ~/private_dotfiles
@@ -101,14 +105,14 @@ have priority over those in
 
 .SH SEE ALSO
 
-.TP 
+.TP
 .B stow
 A more feature rich symlink manager written in perl
 (https://www.gnu.org/software/stow/).
 
-.TP 
-.B stowsh 
-A bash port of 
+.TP
+.B stowsh
+A bash port of
 .B stow
 that seeks more feature parity than
 .B stash
