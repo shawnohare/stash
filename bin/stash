@@ -2,7 +2,6 @@
 
 set -e
 
-
 usage() {
   cat << EOF
 Usage: stash [-Dfv] [-h] [-t target] dir ...
@@ -24,11 +23,11 @@ stash() {
   cd "$1"
 
   # Copy source directory structure to target.
-  find * -type d | while read -r dir; do mkdir -p "$2/${dir}"; done
+  find . -type d | while read -r dir; do mkdir -p "$2/${dir}"; done
 
   # link each source file to the target dir
   # We could find against full path but then we have to remove the prefix.
-  find * -type f | while read -r path; do
+  find . -type f | while read -r path; do
 
     src="$1/${path}"
     tar="$2/${path}"
@@ -47,7 +46,7 @@ unstash() {
 
   # (un)stash each source file. 
   # We could find against full path but then we have to remove the prefix.
-  find * -type f | while read -r path; do
+  find . -type f | while read -r path; do
     # src="$1/${path}"
     tar="$2/${path}"
 
@@ -58,7 +57,13 @@ unstash() {
   done
 
   # Remove empty dirs in the source.
-  find * -type d | while read -r dir; do rmdir "$2/${dir}" &> /dev/null; done
+  find . -d -type d | while read -r dir; do 
+    dir="$2/${dir}"
+    if [ -n "$(find "${dir}" -maxdepth 0 -type d -empty 2>/dev/null)" ]; then
+      printf "unstash: ${dir}/\n"
+      rmdir "${dir}" 
+    fi
+  done
 }
 
 
@@ -82,7 +87,7 @@ main() {
         shift
         ;;
       V)
-        printf "stash version 1.0.1\n"
+        printf "stash version 1.0.2\n"
         exit
         ;;
       t)
