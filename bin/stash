@@ -57,7 +57,7 @@ unstash() {
   done
 
   # Remove empty dirs in the source.
-  find . -d -type d | while read -r dir; do 
+  find . -depth -type d | while read -r dir; do 
     dir="$2/${dir}"
     if [ -n "$(find "${dir}" -maxdepth 0 -type d -empty 2>/dev/null)" ]; then
       printf "unstash: ${dir}/\n"
