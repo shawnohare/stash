@@ -32,6 +32,7 @@ stash() {
   # We could find against full path but then we have to remove the prefix.
   find . -type f | while read -r path; do
 
+    path="${path#??}"
     src="$1/${path}"
     tar="$2/${path}"
 
@@ -51,7 +52,7 @@ unstash() {
   # We could find against full path but then we have to remove the prefix.
   find . -type f | while read -r path; do
     # src="$1/${path}"
-    tar="$2/${path}"
+    tar="$2/${path#??}"
 
     if [ "${FORCE}" ] || [ -L "${tar}" ]; then
       [ "${verbose}" ] &&  printf "stash: Unlinking ${tar}\n"
@@ -61,7 +62,7 @@ unstash() {
 
   # Remove empty dirs in the source.
   find . -depth -type d | while read -r dir; do 
-    dir="$2/${dir}"
+    dir="$2/${dir#??}"
     if [ -n "$(find "${dir}" -maxdepth 0 -type d -empty 2>/dev/null)" ]; then
       printf "stash: Removing empty target ${dir}/\n"
       rmdir "${dir}" 
@@ -90,7 +91,7 @@ main() {
         shift
         ;;
       V)
-        printf "stash: version 1.0.4\n"
+        printf "stash: version 1.0.5\n"
         exit
         ;;
       t)
