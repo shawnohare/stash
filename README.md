@@ -32,9 +32,8 @@ Since `stash` is just a simple executable shell script, it can be installed
 globally via
 
 ```bash
-sudo cp "bin/stash" "/usr/local/bin/"
-gzip --keep "man/stash.1"
-sudo cp "man/stash.1.gz" "/usr/local/man/man1/"
+sudo ln -f -s "bin/stash" "/usr/local/bin/"
+sudo ln -f -s "man/stash.1" "/usr/local/man/man1/"
 ```
 
 # Tests 
