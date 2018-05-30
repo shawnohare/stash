@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+unset STASH_TARGET
+
 setup() {
 
   # Previously existing data.

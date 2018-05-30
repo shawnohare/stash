@@ -4,17 +4,17 @@ set -e
 
 usage() {
   cat << EOF
-Usage: 
+Usage:
     stash [-Dfv] [-t target] dir ...
     stash -h
-    stash -V 
+    stash -V
 
 OPTIONS:
-    -t target  
+    -t target
           Specify target directory to link into. Defaults to $STASH_TARGET or parent.
     -f    Force the creation or removal of links from source to target.
     -D    Delete target links. If -f is set, also remove target files.
-    -v    Verbose messages. Silent by default.
+    -v    VERBOSE messages. Silent by default.
     -V    Print version number.
     -h    Display this this usage message.
 EOF
@@ -36,9 +36,9 @@ stash() {
     src="$1/${path}"
     tar="$2/${path}"
 
-    # - Only stash when the target file (or link) does not exist. 
+    # - Only stash when the target file (or link) does not exist.
     if [ "${FORCE}" ] || [ ! -f "${tar}" ]; then
-      [ "${verbose}" ] &&  printf "stash: Linking ${src} -> ${tar}\n"
+      [ "${VERBOSE}" ] &&  printf "stash: Linking ${src} -> ${tar}\n"
       ln -f -s "${src}" "${tar}"
     fi
   done
@@ -48,24 +48,24 @@ stash() {
 unstash() {
   cd "$1"
 
-  # (un)stash each source file. 
+  # (un)stash each source file.
   # We could find against full path but then we have to remove the prefix.
   find . -type f | while read -r path; do
     # src="$1/${path}"
     tar="$2/${path#??}"
 
     if [ "${FORCE}" ] || [ -L "${tar}" ]; then
-      [ "${verbose}" ] &&  printf "stash: Unlinking ${tar}\n"
+      [ "${VERBOSE}" ] &&  printf "stash: Unlinking ${tar}\n"
       rm -f "${tar}"
     fi
   done
 
   # Remove empty dirs in the source.
-  find . -depth -type d | while read -r dir; do 
+  find . -depth -type d | while read -r dir; do
     dir="$2/${dir#??}"
     if [ -n "$(find "${dir}" -maxdepth 0 -type d -empty 2>/dev/null)" ]; then
       printf "stash: Removing empty target ${dir}/\n"
-      rmdir "${dir}" 
+      rmdir "${dir}"
     fi
   done
 }
@@ -76,19 +76,12 @@ main() {
     case "${opt}" in
       D)
         cmd="unstash"
-        shift
         ;;
       f)
         FORCE=1
-        shift
-        ;;
-      h)
-        usage 
-        exit
         ;;
       v)
-        verbose=1
-        shift
+        VERBOSE=1
         ;;
       V)
         printf "stash: version 1.0.5\n"
@@ -96,7 +89,10 @@ main() {
         ;;
       t)
         target="${OPTARG}"
-        shift 2
+        ;;
+      h)
+        usage
+        exit
         ;;
       \?)
         usage
@@ -104,6 +100,8 @@ main() {
         ;;
     esac
   done
+
+  shift $((OPTIND - 1))
 
   if [ -z "$1" ]; then
     printf "stash: No source dirs specified.\nTry 'stash -h' for help.\n"
