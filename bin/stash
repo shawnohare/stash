@@ -4,16 +4,19 @@ set -e
 
 usage() {
   cat << EOF
-Usage: stash [-Dfv] [-h] [-t target] dir ...
+Usage: 
+    stash [-Dfv] [-t target] dir ...
+    stash -h
+    stash -V 
 
 OPTIONS:
-  -t target  
-        Specify target directory to link into. Defaults to $STASH_TARGET or parent.
-  -f    Force the creation or removal of links from source to target.
-  -D    Delete target links. If -f is set, also remove target files.
-  -v    Verbose messages. Silent by default.
-  -V    Print version number.
-  -h    Display the man page or this usage message.
+    -t target  
+          Specify target directory to link into. Defaults to $STASH_TARGET or parent.
+    -f    Force the creation or removal of links from source to target.
+    -D    Delete target links. If -f is set, also remove target files.
+    -v    Verbose messages. Silent by default.
+    -V    Print version number.
+    -h    Display this this usage message.
 EOF
 }
 
@@ -34,7 +37,7 @@ stash() {
 
     # - Only stash when the target file (or link) does not exist. 
     if [ "${FORCE}" ] || [ ! -f "${tar}" ]; then
-      [ "${verbose}" ] &&  printf "stash: ${src} -> ${tar}\n"
+      [ "${verbose}" ] &&  printf "stash: Linking ${src} -> ${tar}\n"
       ln -f -s "${src}" "${tar}"
     fi
   done
@@ -51,7 +54,7 @@ unstash() {
     tar="$2/${path}"
 
     if [ "${FORCE}" ] || [ -L "${tar}" ]; then
-      [ "${verbose}" ] &&  printf "unstash: ${tar}\n"
+      [ "${verbose}" ] &&  printf "stash: Unlinking ${tar}\n"
       rm -f "${tar}"
     fi
   done
@@ -60,7 +63,7 @@ unstash() {
   find . -depth -type d | while read -r dir; do 
     dir="$2/${dir}"
     if [ -n "$(find "${dir}" -maxdepth 0 -type d -empty 2>/dev/null)" ]; then
-      printf "unstash: ${dir}/\n"
+      printf "stash: Removing empty target ${dir}/\n"
       rmdir "${dir}" 
     fi
   done
@@ -79,7 +82,7 @@ main() {
         shift
         ;;
       h)
-        man stash || usage 
+        usage 
         exit
         ;;
       v)
@@ -87,7 +90,7 @@ main() {
         shift
         ;;
       V)
-        printf "stash version 1.0.3\n"
+        printf "stash: version 1.0.4\n"
         exit
         ;;
       t)
@@ -100,6 +103,11 @@ main() {
         ;;
     esac
   done
+
+  if [ -z "$1" ]; then
+    printf "stash: No source dirs specified.\nTry 'stash -h' for help.\n"
+    exit 1
+  fi
 
   cmd="${cmd:-stash}"
   target="${target:-${STASH_TARGET:-$(dirname $(pwd))}}"
