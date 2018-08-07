@@ -26,7 +26,12 @@ stash() {
   cd "$1"
 
   # Copy source directory structure to target.
-  find . -type d | while read -r dir; do mkdir -p "$2/${dir}"; done
+  # First, attempt to removing broken symlinked dirs.
+  find . -type d | while read -r dir; do 
+    dir="$2/${dir}"
+    [ -L "${dir}" ] && [ ! -e "${dir}" ] && rm "${dir}"
+    mkdir -p "${dir}"
+  done
 
   # link each source file to the target dir
   # We could find against full path but then we have to remove the prefix.

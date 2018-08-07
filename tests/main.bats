@@ -1,148 +1,136 @@
 #!/usr/bin/env sh
 
 unset STASH_TARGET
+readonly TAR="$(pwd)/tmp/tar"
+readonly SRC="$(pwd)/tmp/src"
 
 setup() {
 
   # Previously existing data.
-  mkdir -p tmp
-  touch tmp/ignore
-  ln -s -f tmp/ignore tmp/remove
+  mkdir -p "${TAR}/.bin" 
+  touch "${TAR}/ignore"
+  ln -s -f "${TAR}/ignore" "${TAR}/remove"
 
-  # Package data. 
-  if [ ! -d "tmp/stash" ]; then
-    mkdir -p tmp/stash/pkg1/bin
-    mkdir -p tmp/stash/pkg1/.config/empty1/empty11
-    mkdir -p tmp/stash/pkg2
-    touch tmp/stash/pkg1/bin/bin1
-    touch tmp/stash/pkg1/.config/pkg1
-    touch tmp/stash/pkg1/config1
-    touch tmp/stash/pkg1/ignore
-    touch tmp/stash/pkg1/remove
-    touch tmp/stash/pkg2/config2
+  # Package data. Should be session wide.
+  if [ ! -d "${SRC}" ]; then
+    mkdir -p "${SRC}/pkg1/bin"
+    mkdir -p "${SRC}/pkg1/.config/empty1/empty11"
+    mkdir -p "${SRC}/pkg2"
+    touch "${SRC}/pkg1/bin/bin1"
+    touch "${SRC}/pkg1/.config/pkg1"
+    touch "${SRC}/pkg1/config1"
+    touch "${SRC}/pkg1/ignore"
+    touch "${SRC}/pkg1/remove"
+    touch "${SRC}/pkg2/config2"
   fi
 }
 
 teardown() {
-  # rm -rf tmp
-  cd tmp
-  rm -rf ignore remove config1 config2 bin/bin1 .config
-  cd ..
+  rm -rf "${TAR}" 
 }
 
 @test "stash: absolute paths for source and target." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
-  [ -L "tmp/bin/bin1" ]
-  [ -L "tmp/config1" ]
-  [ -L "tmp/.config/pkg1" ]
-  [ -f "tmp/ignore" ] && [ ! -L "tmp/ignore" ]
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  [ -d "${TAR}/bin" ]
+  [ -L "${TAR}/bin/bin1" ]
+  [ -L "${TAR}/config1" ]
+  [ -L "${TAR}/.config/pkg1" ]
+  [ -f "${TAR}/ignore" ] && [ ! -L "${TAR}/ignore" ]
+}
+
+@test "stash: broken symlinked dir deleted." {
+  ln -s "${TAR}/somebaddir" "${TAR}/bin"
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  [ ! -L "${TAR}/bin" ]
+  [ -d "${TAR}/bin" ]
 }
 
 @test "stash: relative paths for source and target." {
-  bin/stash -v -t "tmp" "tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
-  [ -L "tmp/bin/bin1" ]
-  [ -L "tmp/config1" ]
-  [ -L "tmp/.config/pkg1" ]
-  [ -f "tmp/ignore" ] && [ ! -L "tmp/ignore" ]
+  bin/stash -v -t "tmp/tar" "tmp/src/pkg1"
+  [ -d "${TAR}/bin" ]
+  [ -L "${TAR}/bin/bin1" ]
+  [ -L "${TAR}/config1" ]
+  [ -L "${TAR}/.config/pkg1" ]
+  [ -f "${TAR}/ignore" ] && [ ! -L "${TAR}/ignore" ]
 }
 
 @test "stash: default target path." {
-  cd tmp/stash
+  cd tmp/src
   ../../bin/stash -v pkg1
-  cd ../..
-  [ -d "tmp/bin" ]
-  [ -L "tmp/bin/bin1" ]
-  [ -L "tmp/config1" ]
-  [ -L "tmp/.config/pkg1" ]
-  [ -f "tmp/ignore" ] && [ ! -L "tmp/ignore" ]
+  cd ..
+  [ -d "bin" ]
+  [ -L "bin/bin1" ]
+  [ -L "config1" ]
+  [ -L ".config/pkg1" ]
+  [ -L "ignore" ]
+  cd ..
+  rm -rf tmp
 }
 
 @test "stash: force." {
-  bin/stash -v -f -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
-  [ -L "tmp/bin/bin1" ]
-  [ -L "tmp/config1" ]
-  [ -L "tmp/.config/pkg1" ]
-  [ -L "tmp/ignore" ]
+  bin/stash -v -f -t "${TAR}" "${SRC}/pkg1"
+  [ -L "${TAR}/ignore" ]
 }
 
 @test "stash: multiple sources." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1" "$(pwd)/tmp/stash/pkg2"
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg2"
-  [ -d "tmp/bin" ]
-  [ -L "tmp/bin/bin1" ]
-  [ -L "tmp/config1" ]
-  [ -L "tmp/.config/pkg1" ]
-  [ ! -L "tmp/ignore" ]
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1" "${SRC}/pkg2"
+  [ -L "${TAR}/config1" ]
+  [ -L "${TAR}/config2" ]
 }
 
 @test "stash: idempotence." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ -d "tmp/bin" ]
-  [ -L "tmp/bin/bin1" ]
-  [ -L "tmp/config1" ]
-  [ -L "tmp/.config/pkg1" ]
-  [ ! -L "tmp/ignore" ]
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  [ -d "${TAR}/bin" ]
+  [ -L "${TAR}/bin/bin1" ]
+  [ -L "${TAR}/config1" ]
+  [ -L "${TAR}/.config/pkg1" ]
+  [ -f "${TAR}/ignore" ] && [ ! -L "${TAR}/ignore" ]
 }
 
 @test "unstash: ensure all package links are removed." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ ! -e "tmp/bin/bin1" ]
-  [ ! -e "tmp/config1" ]
-  [ ! -L "tmp/ignore" ]
-  [ ! -e "tmp/remove" ]
-  [ ! -d "tmp/bin" ]
-  [ ! -d "tmp/.config" ]
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
+  [ ! -e "${TAR}/bin/bin1" ]
+  [ ! -e "${TAR}/config1" ]
+  [ ! -L "${TAR}/ignore" ]
+  [ ! -e "${TAR}/remove" ]
+  [ ! -d "${TAR}/bin" ]
+  [ ! -d "${TAR}/.config" ]
 }
 
-@test "unstash: non-empty dirs shouldn't be removed." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  touch tmp/bin/anchor
-  bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ ! -e "tmp/bin/bin1" ]
-  [ ! -e "tmp/config1" ]
-  [ ! -d "tmp/.config" ]
-  [ ! -L "tmp/ignore" ]
-  [ ! -e "tmp/remove" ]
-  [ -d "tmp/bin" ]
-  rm tmp/bin/anchor
+@test "unstash: non-empty dirs shouldn't be deleted." {
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  touch "${TAR}/bin/anchor"
+  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
+  [ -d "${TAR}/bin" ]
 }
 
 @test "unstash: multiple sources." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1" "$(pwd)/tmp/stash/pkg1"
-  bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1" "$(pwd)/tmp/stash/pkg1"
-  [ ! -d "tmp/bin" ]
-  [ ! -e "tmp/bin/bin1" ]
-  [ ! -e "tmp/config1" ]
-  [ ! -d "tmp/.config" ]
-  [ ! -e "tmp/config2" ]
-  [ ! -L "tmp/ignore" ]
-  [ ! -e "tmp/remove" ]
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1" "${SRC}/pkg2"
+  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1" "${SRC}/pkg2"
+  [ ! -e "${TAR}/bin" ]
+  [ ! -e "${TAR}/config1" ]
+  [ ! -e "${TAR}/config2" ]
+  [ ! -d "${TAR}/.config" ]
+  [ ! -L "${TAR}/ignore" ]
+  [ ! -e "${TAR}/remove" ]
 }
 
 @test "unstash: idempotence." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  bin/stash -v -D -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ ! -e "tmp/bin/bin1" ]
-  [ ! -e "tmp/config1" ]
-  [ ! -d "tmp/.config" ]
-  [ ! -L "tmp/ignore" ]
-  [ ! -e "tmp/remove" ]
-  [ ! -d "tmp/bin" ]
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
+  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
+  [ ! -e "${TAR}/bin" ]
+  [ ! -e "${TAR}/config1" ]
+  [ ! -e "${TAR}/config2" ]
+  [ ! -d "${TAR}/.config" ]
+  [ ! -L "${TAR}/ignore" ]
+  [ ! -e "${TAR}/remove" ]
 }
 
 @test "unstash: force." {
-  bin/stash -v -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  bin/stash -v -D -f -t "$(pwd)/tmp" "$(pwd)/tmp/stash/pkg1"
-  [ ! -e "tmp/bin/bin1" ]
-  [ ! -e "tmp/config1" ]
-  [ ! -d "tmp/.config" ]
-  [ ! -e "tmp/ignore" ]
-  [ ! -e "tmp/remove" ]
-  [ ! -d "tmp/bin" ]
+  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  bin/stash -v -D -f -t "${TAR}" "${SRC}/pkg1"
+  [ ! -e "${TAR}/ignore" ]
 }
