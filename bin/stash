@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  cat << EOF
+    cat <<EOF
 Usage:
     stash [-Dfv] [-t target] dir ...
     stash -h
@@ -20,111 +20,109 @@ OPTIONS:
 EOF
 }
 
-
 # Link a src dir $1 to target $2
 stash() {
-  cd "$1"
+    cd "$1"
 
-  # Copy source directory structure to target.
-  # First, attempt to removing broken symlinked dirs.
-  find . -type d | while read -r dir; do 
-    dir="$2/${dir}"
-    [ -L "${dir}" ] && [ ! -e "${dir}" ] && rm "${dir}"
-    mkdir -p "${dir}"
-  done
+    # Copy source directory structure to target.
+    # First, attempt to removing broken symlinked dirs.
+    find . -type d | while read -r dir; do
+        dir="$2/${dir}"
+        [ -L "${dir}" ] && [ ! -e "${dir}" ] && rm "${dir}"
+        mkdir -p "${dir}"
+    done
 
-  # link each source file to the target dir
-  # We could find against full path but then we have to remove the prefix.
-  find . -type f | while read -r path; do
+    # link each source file to the target dir
+    # We could find against full path but then we have to remove the prefix.
+    find . -type f | while read -r path; do
 
-    path="${path#??}"
-    src="$1/${path}"
-    tar="$2/${path}"
+        path="${path#??}"
+        src="$1/${path}"
+        tar="$2/${path}"
 
-    # - Only stash when the target file (or link) does not exist.
-    if [ "${FORCE}" ] || [ ! -f "${tar}" ]; then
-      [ "${VERBOSE}" ] &&  printf "stash: Linking ${src} -> ${tar}\n"
-      ln -f -s "${src}" "${tar}"
-    fi
-  done
+        # - Only stash when the target file (or link) does not exist.
+        if [ "${FORCE}" ] || [ ! -f "${tar}" ]; then
+            [ "${VERBOSE}" ] && printf "stash: Linking ${src} -> ${tar}\n"
+            ln -f -s "${src}" "${tar}"
+        fi
+    done
 }
 
 # unlink a src dir $1 to target $2
 unstash() {
-  cd "$1"
+    cd "$1"
 
-  # (un)stash each source file.
-  # We could find against full path but then we have to remove the prefix.
-  find . -type f | while read -r path; do
-    # src="$1/${path}"
-    tar="$2/${path#??}"
+    # (un)stash each source file.
+    # We could find against full path but then we have to remove the prefix.
+    find . -type f | while read -r path; do
+        # src="$1/${path}"
+        tar="$2/${path#??}"
 
-    if [ "${FORCE}" ] || [ -L "${tar}" ]; then
-      [ "${VERBOSE}" ] &&  printf "stash: Unlinking ${tar}\n"
-      rm -f "${tar}"
-    fi
-  done
+        if [ "${FORCE}" ] || [ -L "${tar}" ]; then
+            [ "${VERBOSE}" ] && printf "stash: Unlinking ${tar}\n"
+            rm -f "${tar}"
+        fi
+    done
 
-  # Remove empty dirs in the source.
-  find . -depth -type d | while read -r dir; do
-    dir="$2/${dir#??}"
-    if [ -n "$(find "${dir}" -maxdepth 0 -type d -empty 2>/dev/null)" ]; then
-      printf "stash: Removing empty target ${dir}/\n"
-      rmdir "${dir}"
-    fi
-  done
+    # Remove empty dirs in the source.
+    find . -depth -type d | while read -r dir; do
+        dir="$2/${dir#??}"
+        if [ -n "$(find "${dir}" -maxdepth 0 -type d -empty 2>/dev/null)" ]; then
+            printf "stash: Removing empty target ${dir}/\n"
+            rmdir "${dir}"
+        fi
+    done
 }
 
-
 main() {
-  while getopts "DfhvVt:" opt; do
-    case "${opt}" in
-      D)
-        cmd="unstash"
-        ;;
-      f)
-        FORCE=1
-        ;;
-      v)
-        VERBOSE=1
-        ;;
-      V)
-        printf "stash: version 1.0.6\n"
-        exit
-        ;;
-      t)
-        target="${OPTARG}"
-        ;;
-      h)
-        usage
-        exit
-        ;;
-      \?)
-        usage
+    while getopts "DfhvVt:" opt; do
+        case "${opt}" in
+        D)
+            cmd="unstash"
+            ;;
+        f)
+            FORCE=1
+            ;;
+        v)
+            VERBOSE=1
+            ;;
+        V)
+            printf "stash: version 1.0.6\n"
+            exit
+            ;;
+        t)
+            target="${OPTARG}"
+            ;;
+        h)
+            usage
+            exit
+            ;;
+        \?)
+            usage
+            exit 1
+            ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    if [ -z "$1" ]; then
+        printf "stash: No source dirs specified.\nTry 'stash -h' for help.\n"
         exit 1
-        ;;
-    esac
-  done
+    fi
 
-  shift $((OPTIND - 1))
+    cmd="${cmd:-stash}"
+    target="${target:-${STASH_TARGET:-$(dirname $(pwd))}}"
 
-  if [ -z "$1" ]; then
-    printf "stash: No source dirs specified.\nTry 'stash -h' for help.\n"
-    exit 1
-  fi
+    # Check if target is relative relative path (remove shortest prefix /)
+    if [ "${target#/}" = "${target}" ]; then
+        target="$(pwd)/${target}"
+    fi
 
-  cmd="${cmd:-stash}"
-  target="${target:-${STASH_TARGET:-$(dirname $(pwd))}}"
-
-  # Check if target is relative relative path (remove shortest prefix /)
-  if [ "${target#/}" = "${target}" ]; then
-    target="$(pwd)/${target}"
-  fi
-
-  for dir in "$@"; do
-    [ "${dir#/}" = "${dir}" ] && dir="$(pwd)/${dir}"
-    ${cmd} "${dir}" "${target}"
-  done
+    for dir in "$@"; do
+        [ "${dir#/}" = "${dir}" ] && dir="$(pwd)/${dir}"
+        ${cmd} "${dir}" "${target}"
+    done
 
 }
 
