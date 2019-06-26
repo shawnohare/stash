@@ -1,6 +1,10 @@
 root:= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-XDG_BIN_HOME ?= ${HOME}/.local/bin
-XDG_DATA_HOME ?= ${HOME}/.local/share
+
+tar := /usr/local
+bin := "$(tar)/bin"
+doc := "$(tar)/share/man/man1"
+# XDG_BIN_HOME ?= ${HOME}/.local/bin
+# XDG_DATA_HOME ?= ${HOME}/.local/share
 
 .PHONY: install uninstall docs
 
@@ -12,12 +16,13 @@ test:
 	rm -rf tmp
 
 docs: 
-	mkdir -p "${XDG_DATA_HOME}/man/man1"
-	ln -f -s $(root)man/stash.1 "${XDG_DATA_HOME}/man/man1/"
+	# mkdir -p "${XDG_DATA_HOME}/man/man1"
+	sudo mkdir -p "$(doc)"
+	sudo ln -f -s $(root)man/stash.1 "$(doc)/"
 
 install: docs
-	ln -f -s $(root)bin/stash "${XDG_BIN_HOME}/"
+	sudo ln -f -s $(root)bin/stash "$(bin)/"
 
 uninstall:
-	rm -f "${XDG_BIN_HOME}/stash"
-	rm -f "${XDG_DATA_HOME}/man/man1/stash.1"
+	sudo rm -f "${bin}/stash"
+	sudo rm -f "${doc}/stash.1"
