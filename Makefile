@@ -1,8 +1,9 @@
 root:= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 tar := /usr/local
-bin := "$(tar)/bin"
-doc := "$(tar)/share/man/man1"
+bin := $(tar)/bin/stash
+docs := $(tar)/share/man/man1
+manpage := $(docs)/stash.1
 # XDG_BIN_HOME ?= ${HOME}/.local/bin
 # XDG_DATA_HOME ?= ${HOME}/.local/share
 
@@ -15,14 +16,15 @@ test:
 	bats tests/*
 	rm -rf tmp
 
-docs: 
-	# mkdir -p "${XDG_DATA_HOME}/man/man1"
-	sudo mkdir -p "$(doc)"
-	sudo ln -f -s $(root)man/stash.1 "$(doc)/"
+$(manpage):
+	sudo mkdir -p "$(docs)"
+	sudo ln -f -s "$(root)man/stash.1" $@ 
 
-install: docs
-	sudo ln -f -s $(root)bin/stash "$(bin)/"
+$(bin):
+	sudo ln -f -s "$(root)bin/stash" $@ 
+
+install: $(manpage) $(bin) 
 
 uninstall:
-	sudo rm -f "${bin}/stash"
-	sudo rm -f "${doc}/stash.1"
+	sudo rm -f "$(bin)"
+	sudo rm -f "$(manpage)"
