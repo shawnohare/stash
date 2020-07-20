@@ -1,11 +1,11 @@
 root:= $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-tar := /usr/local
-bin := $(tar)/bin/stash
-docs := $(tar)/share/man/man1
+XDG_BIN_HOME ?= ${HOME}/.local/bin
+XDG_DATA_HOME ?= ${HOME}/.local/share
+bin := $(XDG_BIN_HOME)/stash
+docs := $(XDG_DATA_HOME)/man/man1
 manpage := $(docs)/stash.1
-# XDG_BIN_HOME ?= ${HOME}/.local/bin
-# XDG_DATA_HOME ?= ${HOME}/.local/share
+
 
 .PHONY: install uninstall docs
 
@@ -17,14 +17,14 @@ test:
 	rm -rf tmp
 
 $(manpage):
-	sudo mkdir -p "$(docs)"
-	sudo ln -f -s "$(root)man/stash.1" $@ 
+	mkdir -p "$(docs)"
+	ln -f -s "$(root)man/stash.1" $@
 
 $(bin):
-	sudo ln -f -s "$(root)bin/stash" $@ 
+	ln -f -s "$(root)bin/stash" $@
 
-install: $(manpage) $(bin) 
+install: $(manpage) $(bin)
 
 uninstall:
-	sudo rm -f "$(bin)"
-	sudo rm -f "$(manpage)"
+	rm -f "$(bin)"
+	rm -f "$(manpage)"
