@@ -1,7 +1,7 @@
-# stash - simply symlink manager.
+# stash - simple symlink manager.
 
-A simplified iteration of the package symlink manager 
-[GNU stow](https://www.gnu.org/software/stow/) written in POSIX shell script.
+A simplified symlink manager symlink manager 
+similar to [GNU stow](https://www.gnu.org/software/stow/) written in POSIX shell script.
 `stash` is feature minimal since its intended use case is symlinking user
 configuration files stored in a version controlled repository. To this end,
 directories are created rather than linked, so that data application
