@@ -1,13 +1,13 @@
-.TH stash 1 "2020-07-20" "Version 1.1.3"
+.TH stash 1 "2023-10-24" "Version 2.0.0"
 
 .SH NAME
 
-stash - simple symlink manager.
+stash - simple POSIX symlink manager.
 
 .SH SYNOPSIS
 
-.B stash \fR[-\fBDfv\fR] [-\fBt \fItarget\fR]
-.I dir \fR...
+.B stash \fR[-\fBdfuVq\fR]
+.I source target \fR
 
 .B stash \fR-\fBh
 
@@ -36,76 +36,50 @@ repositories to directories that might also be populated by application data.
 .SH OPTIONS
 
 .TP
-.B -h
+.B -h|--help
 Display a brief usage message.
 
 .TP
-.B -v
-Verbose mode. Prints which package files are linked or removed.
-
-.TP
-.B -V
+.B -V|--version
 Print version.
 
 .TP
-.B -f
-Force the removal of target files before linking.
+.B -q|--quiet
+Quiet mode. Suppress messags.
 
 .TP
-.B -D
-Delete target links rather than create them. When
+.B -d|--dry-run
+Dry-run mode. When set, the filesystem is not modified.
+
+.TP
+.B -f|--force
+Force the removal of target files  before linking.
+
+.TP
+.B -u|--unlink|--rm
+Remove (unlink) links in target links rather than create them. When
 .B -f
 is set, remove target files (even non-links). Subdirs in the target are
 removed only if they are empty.
 
-.TP
-.B -t \fItarget
-Specify a target directory into which source files will be linked.
-Defaults to
-.B $STASH_TARGET
-if this is set else the parent of the current directory.
-
-.SH ENVIRONMENT
-
-.TP
-.B STASH_TARGET
-Default
-.I target
-when none is passed via the
-.B -t
-option. If not set in the environment, defaults to the parent of the
-current directory.
 
 .SH EXAMPLES
 
 .HP
-.B stash \fIpkg
+.B stash \fI config ~/.config
 
 Link the files in the
-.I pkg
-dir to the parent of the current directory.
+.I config
+dir to the default XDG_CONFIG_HOME location.
 
 .HP
-.B stash -f -t \fI~ ~/dotfiles ~/private_dotfiles
+.B stash -dv \fI config ~/.config
 
-Link the public / private user configuration files stored in the
-.I ~/dotfiles
-and
-.I ~/private_dotfiles
-repositories into the user's
-.I $HOME
-dir.
-An existing
-.B ~/.bashrc
-will be replaced with a link to
-.B ~/dotfiles/.bashrc
-provided the latter file exists.
-Since the
-.B -f
-flag is set, a stack priority is used. That is, the files in
-.I ~/private_dotfiles
-have priority over those in
-.I ~/dotfiles\fR.
+Execute a dry-run to see a plan of what will
+be linked from the
+.I config
+dir to the default XDG_CONFIG_HOME location.
+
 
 .SH SEE ALSO
 

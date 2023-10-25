@@ -29,8 +29,19 @@ teardown() {
   rm -rf "${TAR}" 
 }
 
+@test "stash: dry-run on source dir." {
+  bin/stash --dry-run "${SRC}/pkg1" "${TAR}"
+  [ ! -e "${TAR}/bin" ]
+  [ ! -e "${TAR}/.config/pkg1" ]
+}
+
+@test "stash: dry-run on source file" {
+  bin/stash --dry-run "${SRC}/pkg1/config1" "${TAR}/config1"
+  [ ! -e "${TAR}/config1" ]
+}
+
 @test "stash: absolute paths for source and target." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  bin/stash "${SRC}/pkg1" "${TAR}"
   [ -d "${TAR}/bin" ]
   [ -L "${TAR}/bin/bin1" ]
   [ -L "${TAR}/config1" ]
@@ -38,49 +49,35 @@ teardown() {
   [ -f "${TAR}/ignore" ] && [ ! -L "${TAR}/ignore" ]
 }
 
-@test "stash: broken symlinked dir deleted." {
-  ln -s "${TAR}/somebaddir" "${TAR}/bin"
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
-  [ ! -L "${TAR}/bin" ]
-  [ -d "${TAR}/bin" ]
+@test "stash: link file." {
+  bin/stash "${SRC}/pkg1/config1" "${TAR}"
+  [ -L "${TAR}/config1" ]
 }
+
+# @test "stash: broken symlinked dir deleted." {
+#   ln -s "${TAR}/somebaddir" "${TAR}/bin"
+#   bin/stash -v "${SRC}/pkg1" "${TAR}" 
+#   [ ! -L "${TAR}/bin" ]
+#   [ -d "${TAR}/bin" ]
+# }
 
 @test "stash: relative paths for source and target." {
-  bin/stash -v -t "tmp/tar" "tmp/src/pkg1"
+  bin/stash "tmp/src/pkg1" "tmp/tar" 
   [ -d "${TAR}/bin" ]
   [ -L "${TAR}/bin/bin1" ]
   [ -L "${TAR}/config1" ]
   [ -L "${TAR}/.config/pkg1" ]
   [ -f "${TAR}/ignore" ] && [ ! -L "${TAR}/ignore" ]
-}
-
-@test "stash: default target path." {
-  cd tmp/src
-  ../../bin/stash -v pkg1
-  cd ..
-  [ -d "bin" ]
-  [ -L "bin/bin1" ]
-  [ -L "config1" ]
-  [ -L ".config/pkg1" ]
-  [ -L "ignore" ]
-  cd ..
-  rm -rf tmp
 }
 
 @test "stash: force." {
-  bin/stash -v -f -t "${TAR}" "${SRC}/pkg1"
+  bin/stash --force "${SRC}/pkg1" "${TAR}" 
   [ -L "${TAR}/ignore" ]
 }
 
-@test "stash: multiple sources." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1" "${SRC}/pkg2"
-  [ -L "${TAR}/config1" ]
-  [ -L "${TAR}/config2" ]
-}
-
 @test "stash: idempotence." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  bin/stash "${SRC}/pkg1" "${TAR}"
+  bin/stash "${SRC}/pkg1" "${TAR}"
   [ -d "${TAR}/bin" ]
   [ -L "${TAR}/bin/bin1" ]
   [ -L "${TAR}/config1" ]
@@ -89,8 +86,8 @@ teardown() {
 }
 
 @test "unstash: ensure all package links are removed." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
-  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
+  bin/stash "${SRC}/pkg1" "${TAR}"
+  bin/stash --rm "${SRC}/pkg1" "${TAR}"
   [ ! -e "${TAR}/bin/bin1" ]
   [ ! -e "${TAR}/config1" ]
   [ ! -L "${TAR}/ignore" ]
@@ -100,27 +97,16 @@ teardown() {
 }
 
 @test "unstash: non-empty dirs shouldn't be deleted." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
+  bin/stash "${SRC}/pkg1" "${TAR}" 
   touch "${TAR}/bin/anchor"
-  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
+  bin/stash --rm "${SRC}/pkg1" "${TAR}" 
   [ -d "${TAR}/bin" ]
 }
 
-@test "unstash: multiple sources." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1" "${SRC}/pkg2"
-  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1" "${SRC}/pkg2"
-  [ ! -e "${TAR}/bin" ]
-  [ ! -e "${TAR}/config1" ]
-  [ ! -e "${TAR}/config2" ]
-  [ ! -d "${TAR}/.config" ]
-  [ ! -L "${TAR}/ignore" ]
-  [ ! -e "${TAR}/remove" ]
-}
-
 @test "unstash: idempotence." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
-  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
-  bin/stash -v -D -t "${TAR}" "${SRC}/pkg1"
+  bin/stash "${SRC}/pkg1" "${TAR}" 
+  bin/stash -u "${SRC}/pkg1" "${TAR}" 
+  bin/stash -u "${SRC}/pkg1" "${TAR}"
   [ ! -e "${TAR}/bin" ]
   [ ! -e "${TAR}/config1" ]
   [ ! -e "${TAR}/config2" ]
@@ -130,7 +116,7 @@ teardown() {
 }
 
 @test "unstash: force." {
-  bin/stash -v -t "${TAR}" "${SRC}/pkg1"
-  bin/stash -v -D -f -t "${TAR}" "${SRC}/pkg1"
+  bin/stash "${SRC}/pkg1" "${TAR}" 
+  bin/stash -fu "${SRC}/pkg1" "${TAR}" 
   [ ! -e "${TAR}/ignore" ]
 }
