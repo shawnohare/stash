@@ -13,7 +13,7 @@ all: install
 
 test:
 	rm -rf tmp
-	bats tests/*
+	tests/bats/bin/bats tests/stash/*
 	rm -rf tmp
 
 $(manpage):

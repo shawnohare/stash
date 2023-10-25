@@ -1,48 +1,65 @@
-# Stash 
+# stash - simply symlink manager.
 
-A simplified version of the package symlink manager 
+A simplified iteration of the package symlink manager 
 [GNU stow](https://www.gnu.org/software/stow/) written in POSIX shell script.
 `stash` is feature minimal since its intended use case is symlinking user
 configuration files stored in a version controlled repository. To this end,
 directories are created rather than linked, so that data application
 data does not migrate to a configuration repository.
 
-# Example
-
-TODO
-
-# Installation
-
-## Local
-
-Ensure that that `${XDG_DATA_HOME}/../bin` (defaults to
-`${XDG_BIN_HOME:-~/.local/bin}`) is an element of `$PATH` then navigate to the
-project root and issue:
+## Example usage
 
 ```bash
-make 
+stash ~/dotfiles/config ~/.config
+```
+
+## Install
+
+`stash` is a single shell executable.
+
+The included Makefile will perform a user-level install by 
+linking the `stash` executable to `XDG_BIN_HOME`, which
+defaults to `~/.local/bin/stash`.
+
+```bash
+git clone https://github.com/shawnohare/stash
+cd stash
+make install
 ```
 
 The man page is installed to `${XDG_DATA_HOME}/man/man1`, which `man` will
 search provided that `${XDG_DATA_HOME}/../bin` is an element of `$PATH`.
 
-## Global(superuser access)
+## Uninstall
 
-Since `stash` is just a simple executable shell script, it can be installed
-globally via
+For a user-level install the provided Makefile can be used
+to uninstall the executable and its manpage. 
 
 ```bash
-sudo ln -f -s "bin/stash" "/usr/local/bin/"
-sudo ln -f -s "man/stash.1" "/usr/local/man/man1/"
+make uninstall
 ```
 
-# Tests 
-
-Install the shell scripting testing framework
-[bats](https://github.com/bats-core/bats-core) and then from the project root: 
+Otherwise, simply remove the executable and associated manpage.
+For example
 
 ```bash
-$ make test
+rm /usr/local/bin/stash
+rm /usr/local/man/man1/stash.1
+```
+
+## Testing
+
+The shell scripting testing framework
+[bats](https://github.com/bats-core/bats-core) is included as a git submodule. 
+
+```bash
+git submodule init
+git submodule update
+```
+
+```bash
+git clone --recurse-submodules https://github.com/shawnohare/stash
+make test
 ```
 
 # Similar Projects

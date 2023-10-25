@@ -32,7 +32,7 @@ msg() {
 }
 
 version() {
-    msg "stash: Version 2.0.0"
+    msg "stash: Version 2.0.1"
 }
 
 unlink_file() {
